@@ -32,10 +32,12 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 import re
-import os
-import glob
 import numpy as np
+import pandas as pd
+import csv
+import os
 import json
+import glob
 
 def extract_scenario_information(file_path):
     with open(file_path, 'r') as file:
@@ -119,6 +121,120 @@ def find_relevant_records(xml_file, start, end, type):
 
     return records
 
+def extract_ssq_information(filepath):
+
+    with open(filepath, newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        updated_rows = []
+            
+        for row in reader:
+
+            # these tests went undone or incomplete and should not be considered
+            if (row[1] == "t12" or row[1] == "t16"):
+                continue
+
+            updated_row = [
+
+                False if cell == "No / Não"
+                else True if cell == "Yes / Sim"
+
+                else 0 if cell == "None / Inexistente"
+                else 1 if cell == "Mild / Leve"
+                else 2 if cell == "Moderate / Moderado"
+                else 3 if cell == "Severe / Severo"
+
+                else "AS" if cell == "Avatar + Seated / Avatar + Sentado(a)"
+                else "NS" if cell == "No Avatar + Seated / Sem Avatar + Sentado(a)"
+                else "AW" if cell == "Avatar + Walking / Avatar + Movimento"
+                else "NW" if cell == "No Avatar + Walking / Sem Avatar + Movimento"
+
+                else True if cell == "Yes, I'm ready / Sim, estou pronto(a)"
+                else False if cell == "End experiment early / Terminar a experiência mais cedo"
+
+                else cell
+                
+                for cell in row
+            ]
+            updated_rows.append(updated_row)
+
+    ssq_data = {}
+    for row in updated_rows:
+        ssq_data[row[1]] = {
+            "timestamp": row[0],
+            "baseline": {
+                "sickness": row[2],
+                "general_discomfort": row[3],
+                "fatigue": row[4],
+                "headache": row[5],
+                "eyestrain": row[6],
+                "difficulty_focusing": row[7],
+                "increased_salivation": row[8],
+                "sweating": row[9],
+                "nausea": row[10],
+                "blurred_vision": row[11],
+                "dizziness": row[12],
+                "burping": row[13],
+            },
+            row[14]: {
+                "sickness": row[15],
+                "general_discomfort": row[16],
+                "fatigue": row[17],
+                "headache": row[18],
+                "eyestrain": row[19],
+                "difficulty_focusing": row[20],
+                "increased_salivation": row[21],
+                "sweating": row[22],
+                "nausea": row[23],
+                "blurred_vision": row[24],
+                "dizziness": row[25],
+                "burping": row[26],
+            },
+            row[28]: {
+                "sickness": row[29],
+                "general_discomfort": row[30],
+                "fatigue": row[31],
+                "headache": row[32],
+                "eyestrain": row[33],
+                "difficulty_focusing": row[34],
+                "increased_salivation": row[35],
+                "sweating": row[36],
+                "nausea": row[37],
+                "blurred_vision": row[38],
+                "dizziness": row[39],
+                "burping": row[40],
+            },
+            row[42]: {
+                "sickness": row[43],
+                "general_discomfort": row[44],
+                "fatigue": row[45],
+                "headache": row[46],
+                "eyestrain": row[47],
+                "difficulty_focusing": row[48],
+                "increased_salivation": row[49],
+                "sweating": row[50],
+                "nausea": row[51],
+                "blurred_vision": row[52],
+                "dizziness": row[53],
+                "burping": row[54],
+            },
+            row[56]: {
+                "sickness": row[57],
+                "general_discomfort": row[58],
+                "fatigue": row[59],
+                "headache": row[60],
+                "eyestrain": row[61],
+                "difficulty_focusing": row[62],
+                "increased_salivation": row[63],
+                "sweating": row[64],
+                "nausea": row[65],
+                "blurred_vision": row[66],
+                "dizziness": row[67],
+                "burping": row[68],
+            },
+        }
+
+    return ssq_data
+
 # ---------------------------------------------------------------------------------
 
 def compute_head_movement_metrics(data):
@@ -182,41 +298,45 @@ def compute_heartbeat_metrics(data):
 
 if __name__ == "__main__":
 
-    folder_path = "APP_DATA"
-    xml_file = "export.xml"
-    csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
+    # folder_path = "APP_DATA"
+    # xml_file = "export.xml"
+    # csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
 
-    for application_file in csv_files:
+    # for application_file in csv_files:
 
-        id = os.path.splitext(os.path.basename(application_file))[0]
-        application_data = extract_scenario_information(application_file)
+    #     id = os.path.splitext(os.path.basename(application_file))[0]
+    #     application_data = extract_scenario_information(application_file)
 
-        heartbeat_data = {}
-        for scenario, lines in application_data.items():
-            shortened_scenario = scenario.replace("SCENARIO_", "", 1)
-            start, end = get_start_and_end_timestamps(lines)
+    #     heartbeat_data = {}
+    #     for scenario, lines in application_data.items():
+    #         shortened_scenario = scenario.replace("SCENARIO_", "", 1)
+    #         start, end = get_start_and_end_timestamps(lines)
 
-            heartBeatType = "HKQuantityTypeIdentifierHeartRate"
-            energyBurnedType = "HKQuantityTypeIdentifierActiveEnergyBurned"
+    #         heartBeatType = "HKQuantityTypeIdentifierHeartRate"
+    #         energyBurnedType = "HKQuantityTypeIdentifierActiveEnergyBurned"
 
-            heartbeat_records = find_relevant_records(xml_file, start, end, heartBeatType)
-            heartbeat = [[r.get('startDate'), r.get('endDate'), r.get('value')] for r in heartbeat_records]
-            heartbeat_data[scenario] = heartbeat
+    #         heartbeat_records = find_relevant_records(xml_file, start, end, heartBeatType)
+    #         heartbeat = [[r.get('startDate'), r.get('endDate'), r.get('value')] for r in heartbeat_records]
+    #         heartbeat_data[scenario] = heartbeat
 
-            # folder_name = f"BIOMETRIC_RESULTS/{id}"
-            # os.makedirs(folder_name, exist_ok=True)
+    #         # folder_name = f"BIOMETRIC_RESULTS/{id}"
+    #         # os.makedirs(folder_name, exist_ok=True)
 
-            # with open(f'{folder_name}/heartbeat_{shortened_scenario}.csv', mode='w', newline='') as file:
-            #     writer = csv.writer(file)
-            #     writer.writerows(heartbeat_data)
+    #         # with open(f'{folder_name}/heartbeat_{shortened_scenario}.csv', mode='w', newline='') as file:
+    #         #     writer = csv.writer(file)
+    #         #     writer.writerows(heartbeat_data)
 
-        head_movement_metrics = compute_head_movement_metrics(application_data)
-        heartbeat_metrics = compute_heartbeat_metrics(heartbeat_data)
+    #     head_movement_metrics = compute_head_movement_metrics(application_data)
+    #     heartbeat_metrics = compute_heartbeat_metrics(heartbeat_data)
 
-        metrics_folder_name = f"METRICS/{id}"
-        os.makedirs(metrics_folder_name, exist_ok=True)
-        with open(f'{metrics_folder_name}/head_movement_metrics.json', mode='w', newline='') as file:
-            json.dump(head_movement_metrics, file)
-        with open(f'{metrics_folder_name}/heartbeat_metrics.json', mode='w', newline='') as file:
-            json.dump(heartbeat_metrics, file)
+    #     metrics_folder_name = f"METRICS/{id}"
+    #     os.makedirs(metrics_folder_name, exist_ok=True)
+    #     with open(f'{metrics_folder_name}/head_movement_metrics.json', mode='w', newline='') as file:
+    #         json.dump(head_movement_metrics, file)
+    #     with open(f'{metrics_folder_name}/heartbeat_metrics.json', mode='w', newline='') as file:
+    #         json.dump(heartbeat_metrics, file)
 
+
+    ssq_data = extract_ssq_information('ssq.csv')
+    with open('ssq.json', mode='w', newline='') as file:
+        json.dump(ssq_data, file)
