@@ -5,9 +5,10 @@ import pandas as pd
 from statsmodels.stats.anova import AnovaRM
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scipy.stats import ttest_rel
+import statsmodels.api as sm
 
 
-def anova_ssq(filepath):
+def repeated_measures_anova(filepath):
     with open(filepath) as json_file:
         ssq_data = json.load(json_file)
 
@@ -26,6 +27,7 @@ def anova_ssq(filepath):
     df = pd.DataFrame(data)
     aov = AnovaRM(data=df, depvar='score', subject='participant', within=['condition'])
     anova_results = aov.fit()
+
     posthoc = pairwise_tukeyhsd(df['score'], df['condition'], alpha=0.05)
     
     # print(anova_results)
@@ -55,7 +57,7 @@ def anova_ssq(filepath):
     return anova_results, posthoc
 
 
-def paired_ttests_heartbeat(folderpaths):
+def paired_ttests(folderpaths):
 
     data = []
     for path in folderpaths:
@@ -107,7 +109,63 @@ def paired_ttests_heartbeat(folderpaths):
         }
     }
 
+def two_way_repeated_measures_anova(filepath):
+    with open(filepath) as json_file:
+        ssq_data = json.load(json_file)
 
+    data = []
+    for participant_id, details in ssq_data.items():
+        if len(details.keys()) < 6:
+            continue
+        for condition in ['NS', 'AS', 'NW', 'AW']:
+            avatar = 'avatar' if 'A' in condition else 'no_avatar'
+            locomotion = 'walking' if 'W' in condition else 'static'
+            row = {
+                'participant': participant_id,
+                'avatar': avatar,
+                'locomotion': locomotion,
+                'condition': condition,
+                'score': sum(details[condition].values())
+            }
+            data.append(row)
+
+    df = pd.DataFrame(data)
+
+    aov = AnovaRM(data=df, depvar='score', subject='participant', within=['avatar', 'locomotion'])
+    anova_results = aov.fit()
+
+    df['interaction'] = df['avatar'] + "_" + df['locomotion']
+    posthoc = pairwise_tukeyhsd(df['score'], df['interaction'], alpha=0.05)
+
+    # print(anova_results)
+    # print()
+    # print(posthoc)
+
+
+
+    #                     Anova
+    # ===============================================
+    #                   F Value Num DF  Den DF Pr > F
+    # -----------------------------------------------
+    # avatar             0.9414 1.0000 27.0000 0.3405
+    # locomotion         6.6179 1.0000 27.0000 0.0159
+    # avatar:locomotion  0.2222 1.0000 27.0000 0.6411
+    # ===============================================
+
+
+    #           Multiple Comparison of Means - Tukey HSD, FWER=0.05           
+    # ========================================================================
+    #      group1            group2      meandiff p-adj   lower  upper  reject
+    # ------------------------------------------------------------------------
+    #    avatar_static    avatar_walking   0.7857 0.6897 -1.0766  2.648  False
+    #    avatar_static  no_avatar_static   0.1071 0.9988 -1.7551 1.9694  False
+    #    avatar_static no_avatar_walking   1.0357 0.4705 -0.8266  2.898  False
+    #   avatar_walking  no_avatar_static  -0.6786 0.7774 -2.5408 1.1837  False
+    #   avatar_walking no_avatar_walking     0.25 0.9852 -1.6123 2.1123  False
+    # no_avatar_static no_avatar_walking   0.9286 0.5642 -0.9337 2.7908  False
+    # ------------------------------------------------------------------------
+
+    return anova_results, posthoc
 
 
 
@@ -128,8 +186,10 @@ if __name__ == "__main__":
 
     #     head_movement_metrics_filepath = f'{metrics_folder_name}/head_movement_metrics.json'
 
-    anova_results, posthoc = anova_ssq('ssq.json') # for H1 and H3
-    paired_ttests = paired_ttests_heartbeat(heartbeat_json_files) # for H2
+    # anova_results, posthoc = repeated_measures_anova('ssq.json') # for H1 and H3
+    # paired_ttests = paired_ttests(heartbeat_json_files) # for H2
+    anova_results, posthoc = two_way_repeated_measures_anova('ssq.json') # for H4
+
 
 
 
