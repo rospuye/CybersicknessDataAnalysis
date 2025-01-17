@@ -298,45 +298,48 @@ def compute_heartbeat_metrics(data):
 
 if __name__ == "__main__":
 
-    # folder_path = "APP_DATA"
-    # xml_file = "export.xml"
-    # csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
+    folder_path = "APP_DATA"
+    xml_file = "export.xml"
+    csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
 
-    # for application_file in csv_files:
+    for application_file in csv_files:
 
-    #     id = os.path.splitext(os.path.basename(application_file))[0]
-    #     application_data = extract_scenario_information(application_file)
+        id = os.path.splitext(os.path.basename(application_file))[0]
+        if (id in ["t12", "t16", "t19", "t26", "t27"]):
+            continue
 
-    #     heartbeat_data = {}
-    #     for scenario, lines in application_data.items():
-    #         shortened_scenario = scenario.replace("SCENARIO_", "", 1)
-    #         start, end = get_start_and_end_timestamps(lines)
+        application_data = extract_scenario_information(application_file)
 
-    #         heartBeatType = "HKQuantityTypeIdentifierHeartRate"
-    #         energyBurnedType = "HKQuantityTypeIdentifierActiveEnergyBurned"
+        heartbeat_data = {}
+        for scenario, lines in application_data.items():
+            shortened_scenario = scenario.replace("SCENARIO_", "", 1)
+            start, end = get_start_and_end_timestamps(lines)
 
-    #         heartbeat_records = find_relevant_records(xml_file, start, end, heartBeatType)
-    #         heartbeat = [[r.get('startDate'), r.get('endDate'), r.get('value')] for r in heartbeat_records]
-    #         heartbeat_data[scenario] = heartbeat
+            heartBeatType = "HKQuantityTypeIdentifierHeartRate"
 
-    #         # folder_name = f"BIOMETRIC_RESULTS/{id}"
-    #         # os.makedirs(folder_name, exist_ok=True)
+            heartbeat_records = find_relevant_records(xml_file, start, end, heartBeatType)
 
-    #         # with open(f'{folder_name}/heartbeat_{shortened_scenario}.csv', mode='w', newline='') as file:
-    #         #     writer = csv.writer(file)
-    #         #     writer.writerows(heartbeat_data)
+            heartbeat = [[r.get('startDate'), r.get('endDate'), r.get('value')] for r in heartbeat_records]
+            heartbeat_data[scenario] = heartbeat
 
-    #     head_movement_metrics = compute_head_movement_metrics(application_data)
-    #     heartbeat_metrics = compute_heartbeat_metrics(heartbeat_data)
+            folder_name = f"BIOMETRIC_RESULTS/{id}"
+            os.makedirs(folder_name, exist_ok=True)
 
-    #     metrics_folder_name = f"METRICS/{id}"
-    #     os.makedirs(metrics_folder_name, exist_ok=True)
-    #     with open(f'{metrics_folder_name}/head_movement_metrics.json', mode='w', newline='') as file:
-    #         json.dump(head_movement_metrics, file)
-    #     with open(f'{metrics_folder_name}/heartbeat_metrics.json', mode='w', newline='') as file:
-    #         json.dump(heartbeat_metrics, file)
+            with open(f'{folder_name}/heartbeat_{shortened_scenario}.csv', mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(heartbeat_data[scenario])
+
+        # head_movement_metrics = compute_head_movement_metrics(application_data)
+        heartbeat_metrics = compute_heartbeat_metrics(heartbeat_data)
+
+        metrics_folder_name = f"METRICS/{id}"
+        os.makedirs(metrics_folder_name, exist_ok=True)
+        # with open(f'{metrics_folder_name}/head_movement_metrics.json', mode='w', newline='') as file:
+        #     json.dump(head_movement_metrics, file)
+        with open(f'{metrics_folder_name}/heartbeat_metrics.json', mode='w', newline='') as file:
+            json.dump(heartbeat_metrics, file)
 
 
-    ssq_data = extract_ssq_information('ssq.csv')
-    with open('ssq.json', mode='w', newline='') as file:
-        json.dump(ssq_data, file)
+    # ssq_data = extract_ssq_information('ssq.csv')
+    # with open('ssq.json', mode='w', newline='') as file:
+    #     json.dump(ssq_data, file)
